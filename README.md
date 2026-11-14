@@ -1,22 +1,22 @@
-# Hong Kong Cinema
+# React 3D Cinema Preview
 
-A mock cinema app for picking a seat in Hall 3 and seeing the screen from that seat. It is not a real cinema, and it does not take payment.
+A React library for picking a cinema seat and seeing the screen from that chair. This repository's site is a mock Hong Kong cinema, Hall 3. It is not a real cinema, and it does not take payment.
 
-The seat preview is the React package [`nullmicgo-3d-cinema-preview`](https://www.npmjs.com/package/nullmicgo-3d-cinema-preview). This repository's site, in `apps/web`, renders that component.
+The package is [`react-3d-cinema-preview`](https://www.npmjs.com/package/react-3d-cinema-preview). The site in `apps/web` renders that component.
 
 Live preview: [mock-hong-kong-cinema.nullmicgo.com](https://mock-hong-kong-cinema.nullmicgo.com/)
 
 ## Install
 
 ```bash
-npm install nullmicgo-3d-cinema-preview react react-dom three
+npm install react-3d-cinema-preview react react-dom three
 ```
 
 React 18 or newer and Three.js 0.170 or newer have to be installed too. Import the component and its stylesheet:
 
 ```tsx
-import { CinemaPreview } from "nullmicgo-3d-cinema-preview";
-import "nullmicgo-3d-cinema-preview/style.css";
+import { CinemaPreview } from "react-3d-cinema-preview";
+import "react-3d-cinema-preview/style.css";
 
 export function App() {
   return (
@@ -29,7 +29,7 @@ export function App() {
 }
 ```
 
-`films` is your list of posters, trailers, and showtimes. The package does not include those files. Each showtime carries a standard price and a recliner price. `audience` points at two GLB files of people sitting down. Full prop notes are in [`packages/hong-kong-cinema/README.md`](packages/hong-kong-cinema/README.md).
+`films` is your list of posters, trailers, and showtimes. The package does not include those files. Each showtime carries a standard price and a recliner price. `audience` points at two GLB files of people sitting down. Full prop notes are in [`packages/react-3d-cinema-preview/README.md`](packages/react-3d-cinema-preview/README.md).
 
 Serve the page with any static server. A `file://` URL cannot load the modules or the models.
 
@@ -171,7 +171,7 @@ sequenceDiagram
 
 ## Technical solution
 
-The site is a React app. `CinemaPreview` in the `nullmicgo-3d-cinema-preview` package owns the lobby, showtimes, seat chart, and the Three.js hall. The hall stays hidden until the visitor asks to see the seat. There is no backend. The hall module imports `THREE`, `GLTFLoader`, and `RectAreaLightUniformsLib` from the `three` package. `RectAreaLightUniformsLib.init()` has to run before the screen light is created, or that light does not shade anything.
+The site is a React app. `CinemaPreview` in the `react-3d-cinema-preview` package owns the lobby, showtimes, seat chart, and the Three.js hall. The hall stays hidden until the visitor asks to see the seat. There is no backend. The hall module imports `THREE`, `GLTFLoader`, and `RectAreaLightUniformsLib` from the `three` package. `RectAreaLightUniformsLib.init()` has to run before the screen light is created, or that light does not shade anything.
 
 ### Films and prices
 
@@ -293,7 +293,7 @@ Vite prints a local URL. Opening the built files directly fails. ES modules and 
 
 | Path | Role |
 | --- | --- |
-| `packages/hong-kong-cinema` | The React library, published as `nullmicgo-3d-cinema-preview` |
+| `packages/react-3d-cinema-preview` | The React library, published as `react-3d-cinema-preview` |
 | `apps/web` | This site, which renders `CinemaPreview` |
 | `apps/web/public` | Posters, trailers, `cinema-seat.glb`, and the two seated models |
 | `demo.mp4` | The walkthrough encoded for this README |
@@ -302,16 +302,16 @@ Posters and trailers are used here as a personal mock. They belong to their righ
 
 ## Publish to npm
 
-The package name on npm is `nullmicgo-3d-cinema-preview`. From this repository, on a machine logged in to npm:
+The package name on npm is `react-3d-cinema-preview`. From this repository, on a machine logged in to npm:
 
 ```bash
 npm login
-npm publish -w nullmicgo-3d-cinema-preview --access public
+npm publish -w react-3d-cinema-preview --access public
 ```
 
 `npm login` opens a browser to npmjs and stores the token on this machine. The workspace script builds the library first (`tsc`, `tsup`, and the stylesheet), then uploads `dist`, `README.md`, and `LICENSE`. React, React DOM, and Three.js stay as peer dependencies, so people install those alongside the package.
 
-After it succeeds, `npm install nullmicgo-3d-cinema-preview` works from the Install section above. A later change needs a new version in `packages/hong-kong-cinema/package.json` before the next `npm publish`.
+After it succeeds, `npm install react-3d-cinema-preview` works from the Install section above. A later change needs a new version in `packages/react-3d-cinema-preview/package.json` before the next `npm publish`.
 
 ## Credits
 

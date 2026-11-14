@@ -1,4 +1,4 @@
-import type { CinemaFilm } from "nullmicgo-3d-cinema-preview";
+import type { CinemaFilm } from "react-3d-cinema-preview";
 
 export const films: CinemaFilm[] = [
   {

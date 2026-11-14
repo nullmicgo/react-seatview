@@ -1,5 +1,5 @@
 {
-  "name": "hong-kong-cinema-site",
+  "name": "react-3d-cinema-preview-site",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "nullmicgo-3d-cinema-preview": "*",
+    "react-3d-cinema-preview": "*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "three": "0.170.0"

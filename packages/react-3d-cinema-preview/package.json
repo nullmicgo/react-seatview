@@ -1,25 +1,26 @@
 {
-  "name": "nullmicgo-3d-cinema-preview",
+  "name": "react-3d-cinema-preview",
   "version": "0.1.0",
-  "description": "React seat preview for a cinema hall. Pick a film, pick a seat, and see the screen from that chair.",
+  "description": "React component for a 3D cinema seat preview. Pick a film, pick a seat, and see the screen from that chair.",
   "type": "module",
   "license": "MIT",
   "author": "Michael Lau",
   "keywords": [
     "react",
+    "react-component",
     "cinema",
     "seat-preview",
     "three",
-    "hong-kong"
+    "3d"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nullmicgo/hong-kong-cinema.git",
-    "directory": "packages/hong-kong-cinema"
+    "url": "git+https://github.com/nullmicgo/react-3d-cinema-preview.git",
+    "directory": "packages/react-3d-cinema-preview"
   },
   "homepage": "https://mock-hong-kong-cinema.nullmicgo.com/",
   "bugs": {
-    "url": "https://github.com/nullmicgo/hong-kong-cinema/issues"
+    "url": "https://github.com/nullmicgo/react-3d-cinema-preview/issues"
   },
   "files": [
     "dist",
