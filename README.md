@@ -2,7 +2,7 @@
 
 A mock cinema app for picking a seat in Hall 3 and seeing the screen from that seat. It is not a real cinema, and it does not take payment.
 
-Live preview: [mocl-hong-kong-cinema.nullmicgo.com](https://mocl-hong-kong-cinema.nullmicgo.com)
+Live preview: [mock-hong-kong-cinema.nullmicgo.com](https://mock-hong-kong-cinema.nullmicgo.com/)
 
 Developed by [Michael Lau](http://nullmicgo.com/).
 
