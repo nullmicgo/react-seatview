@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hong Kong Cinema · Hall 3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { height: 100%; background: #070708; color: #f4f4f5; }
+    body { font-family: ui-sans-serif, system-ui, sans-serif; }
+    ::selection { background: #6ee7b7; color: #052e22; }
+    button, th, td, p { color: inherit; }
+    :focus-visible { outline: 2px solid #6ee7b7; outline-offset: 3px; }
+    #map { transition: opacity 280ms ease, visibility 0s linear 280ms; }
+    #map.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    #lobby.is-hidden, #times.is-hidden { visibility: hidden; pointer-events: none; }
+    #stage.is-off { visibility: hidden; }
+    #lobby, #times { color: #1c241c; }
+    #sheet {
+      transform: translateY(110%);
+      transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #sheet.is-open { transform: translateY(0); }
+    .seat {
+      width: 26px; height: 22px; border-radius: 5px 5px 7px 7px;
+      background: #3a3a42;
+      box-shadow: inset 0 8px 0 #2a2a30;
+    }
+    .seat.taken { background: #6d6d76; box-shadow: inset 0 8px 0 #55555c; }
+    .seat.recliner { background: #8d5d66; box-shadow: inset 0 8px 0 #6e454c; }
+    .seat.selected {
+      background: #5eead4; color: #042f2e;
+      box-shadow: inset 0 8px 0 #2dd4bf, 0 0 0 4px rgba(94, 234, 212, 0.28);
+      font-size: 10px; font-weight: 700;
+    }
+    #grid { display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+    #continue, #book { background: #3cba8b; color: #052e22; }
+    #continue:hover, #book:hover { background: #5eead4; }
+    #book:disabled { background: #3f3f46; color: #d4d4d8; }
+    #to-times:hover, #change:hover { color: #ffffff; }
+    @media (prefers-reduced-motion: reduce) {
+      #map, #sheet { transition: none; }
+    }
+  </style>
+</head>
+<body class="overflow-hidden">
+  <canvas id="stage" class="is-off absolute inset-0 z-[1] h-full w-full" aria-label="View from the selected seat"></canvas>
+
+  <div id="map" class="absolute inset-0 z-10 flex flex-col bg-[#070708] is-hidden">
+    <header class="mx-auto w-full max-w-md border-b border-[#2a2a2e] px-4 pb-3 pt-4">
+      <button type="button" id="to-times" class="text-[13px] font-medium text-[#d4d4d8]">‹ Showtimes</button>
+      <h1 id="now-showing" class="mt-2 text-[18px] font-semibold leading-6">Hall 3</h1>
+      <p class="text-[13px] text-[#a1a1aa]">Hong Kong Cinema</p>
+    </header>
+
+    <div class="mx-auto mt-5 w-full max-w-md px-8">
+      <svg viewBox="0 0 320 36" class="w-full text-zinc-200" aria-hidden="true">
+        <path d="M8 30 Q160 -8 312 30" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+      <p class="text-center text-[11px] tracking-[0.22em] text-zinc-500">SCREEN</p>
+    </div>
+
+    <div id="grid" class="mx-auto mt-2 w-full max-w-md flex-1 overflow-auto px-4" role="grid" aria-label="Seats"></div>
+
+    <footer class="mx-auto w-full max-w-md border-t border-[#2a2a2e] px-4 pb-5 pt-3">
+      <div class="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-[#a1a1aa]">
+        <span class="inline-flex items-center gap-1.5"><i class="inline-block h-2.5 w-3 rounded-sm bg-[#3a3a42]"></i>Available</span>
+        <span class="inline-flex items-center gap-1.5"><i class="inline-block h-2.5 w-3 rounded-sm bg-[#6d6d76]"></i>Taken</span>
+        <span class="inline-flex items-center gap-1.5"><i class="inline-block h-2.5 w-3 rounded-sm bg-[#8d5d66]"></i>Recliner</span>
+        <span class="inline-flex items-center gap-1.5"><i class="inline-block h-2.5 w-3 rounded-sm bg-[#5eead4]"></i>Selected</span>
+      </div>
+      <div class="mt-3 flex items-end justify-between gap-4">
+        <p id="pick-label" class="text-[15px] font-medium">Row B · Seat 4</p>
+        <p id="pick-price" class="text-[22px] font-semibold leading-none tabular-nums">HK$120</p>
+      </div>
+      <button type="button" id="continue" class="mt-3 h-12 w-full rounded-md text-[16px] font-semibold">See this seat</button>
+    </footer>
+  </div>
+
+  <div id="pov-chrome" class="pointer-events-none absolute inset-0 z-20 hidden">
+    <div class="pointer-events-auto flex items-start justify-between px-4 pt-4">
+      <button type="button" id="back-map" class="grid h-10 w-10 place-items-center rounded-full bg-black/50 text-lg text-white" aria-label="Change seat">‹</button>
+      <p class="mt-1 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-[13px] text-zinc-100"><i class="h-1.5 w-1.5 rounded-full bg-[#5eead4]"></i><span id="view-pill">View from B4</span></p>
+      <button type="button" id="sound" class="h-10 rounded-full bg-black/50 px-3 text-[12px] font-semibold text-white">Sound</button>
+    </div>
+    <section id="sheet" class="pointer-events-auto absolute inset-x-0 bottom-0 mx-auto w-full max-w-md border-t border-[#3f3f46] bg-[#141416] px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_18px_rgba(0,0,0,0.45)]">
+      <div class="flex items-center gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-baseline justify-between gap-2">
+            <h2 id="seat-name" class="truncate text-[15px] font-semibold leading-5">Row B, Seat 4</h2>
+            <p id="sheet-price" class="shrink-0 text-[15px] font-semibold leading-none tabular-nums">HK$120</p>
+          </div>
+          <p id="seat-meta" class="text-[12px] leading-4 text-[#a1a1aa]">Standard · Up close</p>
+        </div>
+        <button type="button" id="change" class="h-9 shrink-0 text-[13px] font-medium text-[#d4d4d8]">Change</button>
+        <button type="button" id="book" class="h-9 shrink-0 rounded-md px-4 text-[14px] font-semibold">Hold</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="lobby" class="absolute inset-0 z-30 flex justify-center bg-[#0e3a30]">
+    <div class="flex h-full w-full max-w-[430px] flex-col bg-[#f4f1e8]">
+      <header class="bg-[#0e3a30] px-4 pb-4 pt-5 text-center text-white">
+        <h1 class="text-[15px] font-semibold tracking-[0.16em]">HONG KONG CINEMA</h1>
+        <p class="mt-0.5 text-[13px] text-white">香港戲院</p>
+      </header>
+      <div class="flex gap-4 overflow-x-auto px-4 pt-4 text-[14px]" role="tablist" aria-label="Dates">
+        <button type="button" class="day shrink-0 border-b-2 border-[#0e3a30] pb-1 font-semibold" aria-selected="true">現正預售</button>
+        <button type="button" class="day shrink-0 border-b-2 border-transparent pb-1 text-[#5c675f]" aria-selected="false">今日</button>
+        <button type="button" class="day shrink-0 border-b-2 border-transparent pb-1 text-[#5c675f]" aria-selected="false">11月15日(日)</button>
+        <button type="button" class="day shrink-0 border-b-2 border-transparent pb-1 text-[#5c675f]" aria-selected="false">11月16日(一)</button>
+      </div>
+      <div class="flex-1 overflow-auto px-4 pb-6 pt-4">
+        <div class="flex flex-wrap gap-4">
+          <button type="button" class="film w-[158px] text-left" data-film="mission">
+            <img src="poster001.jpeg" alt="" class="aspect-[2/3] w-full object-cover object-top">
+            <span class="mt-2 block truncate text-[15px] font-medium">《鎗火》</span>
+            <span class="mt-1.5 flex gap-1">
+              <span class="rounded border border-[#1c241c] px-1.5 py-0.5 text-[11px]">2D</span>
+              <span class="rounded border border-[#1c241c] px-1.5 py-0.5 text-[11px]">IMAX</span>
+            </span>
+          </button>
+          <button type="button" class="film w-[158px] text-left" data-film="throwdown">
+            <img src="Throw-Down-poster.jpg" alt="" class="aspect-[2/3] w-full object-cover object-top">
+            <span class="mt-2 block truncate text-[15px] font-medium">《柔道龍虎榜》</span>
+            <span class="mt-1.5 flex gap-1">
+              <span class="rounded border border-[#1c241c] px-1.5 py-0.5 text-[11px]">2D</span>
+            </span>
+          </button>
+        </div>
+        <footer class="mt-8 border-t border-[#d5d0c4] pt-4 text-[13px] leading-5">
+          <p>This is a mock cinema app, not a real cinema.</p>
+          <p class="mt-1">Developed by Michael Lau.</p>
+          <p class="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+            <a class="underline" href="http://nullmicgo.com/" target="_blank" rel="noopener noreferrer">Website</a>
+            <a class="underline" href="https://www.linkedin.com/in/nullmicgo/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            <a class="underline" href="https://www.youtube.com/@nullmicgo" target="_blank" rel="noopener noreferrer">YouTube</a>
+          </p>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <div id="times" class="is-hidden absolute inset-0 z-30 flex justify-center bg-[#0e3a30]">
+    <div class="flex h-full w-full max-w-[430px] flex-col bg-[#f4f1e8]">
+      <header class="relative bg-[#0e3a30] px-4 pb-3 pt-4 text-center text-white">
+        <button type="button" id="to-lobby" class="absolute left-3 top-3 grid h-9 w-9 place-items-center text-[22px] text-white" aria-label="Back to films">‹</button>
+        <h1 class="text-[15px] font-semibold tracking-[0.16em]">HONG KONG CINEMA</h1>
+        <p class="mt-0.5 text-[13px] text-white">香港戲院</p>
+      </header>
+      <div class="bg-[#0e3a30] px-4 pb-5 text-white">
+        <h2 id="film-title" class="text-[18px] font-semibold leading-7">《鎗火》 The Mission</h2>
+        <span id="film-formats" class="mt-2 inline-block rounded border border-white px-2 py-0.5 text-[12px]">2D IMAX</span>
+        <p id="film-meta" class="mt-3 text-[13px] text-white">IIB · 84分鐘 · 劇情 · 粵語</p>
+      </div>
+      <div class="flex-1 overflow-auto px-4 pb-8 pt-4">
+        <p class="inline-block border-b-2 border-[#0e3a30] pb-1 text-[15px] font-semibold">2026年11月14日</p>
+        <p class="mt-4 text-[18px] font-semibold">Hong Kong Cinema</p>
+        <p class="text-[14px] text-[#3e5348]">Hall 3</p>
+        <div id="film-slots"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+    import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
+
+    const films = {
+      mission: {
+        title: "The Mission",
+        year: "1999",
+        zh: "鎗火",
+        meta: "IIB · 84分鐘 · 劇情 · 粵語",
+        formats: "2D IMAX",
+        trailer: "The Mission (1999) 鎗火 - Movie Trailer - Far East Films - Far East Films (720p, h264).mp4",
+        standard: 120,
+        recliner: 170,
+        slots: [
+          { label: "05:30 PM · 2D", time: "05:30 PM", house: "HOUSE 3 / 2D", standard: 120, recliner: 170 },
+          { label: "07:45 PM · IMAX", time: "07:45 PM", house: "HOUSE 3 / IMAX", standard: 180, recliner: 230 },
+          { label: "10:15 PM · 3D", time: "10:15 PM", house: "HOUSE 3 / 3D", standard: 145, recliner: 195 }
+        ]
+      },
+      throwdown: {
+        title: "Throw Down",
+        year: "2004",
+        zh: "柔道龍虎榜",
+        meta: "IIB · 95分鐘 · 劇情 · 粵語",
+        formats: "2D",
+        trailer: "Throw Down (2004) Original Trailer [4K] - HD Retro Trailers (1080p, h264).mp4",
+        standard: 120,
+        recliner: 170,
+        slots: [
+          { label: "02:30 PM · 2D", time: "02:30 PM", house: "HOUSE 3 / 2D", standard: 120, recliner: 170 },
+          { label: "05:15 PM · 2D", time: "05:15 PM", house: "HOUSE 3 / 2D", standard: 120, recliner: 170 },
+          { label: "08:00 PM · 2D", time: "08:00 PM", house: "HOUSE 3 / 2D", standard: 120, recliner: 170 }
+        ]
+      }
+    };
+    let film = films.mission;
+
+    const ROWS = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
+    const PER = 12;
+    const SCREEN_Z = 0;
+    const SCREEN_W = 22;
+    const SCREEN_H = 10;
+    const SCREEN_Y = 6.15;
+    const seats = [];
+    ROWS.forEach((row, r) => {
+      for (let n = 1; n <= PER; n++) {
+        const recliner = r >= 7;
+        const taken = !recliner && ((r * 5 + n * 3) % 7 === 0);
+        const pitch = 0.84;
+        const aisle = 1.85;
+        const x = n <= 6 ? -aisle / 2 - (6 - n) * pitch : aisle / 2 + (n - 7) * pitch;
+        const z = 7.4 + r * 1.46;
+        const y = 0.15 + r * 0.22;
+        seats.push({ id: row + n, row, n, r, recliner, taken, x, y, z });
+      }
+    });
+
+    function fabric(color, emissive, intensity) {
+      return new THREE.MeshPhysicalMaterial({
+        color,
+        roughness: 0.8,
+        metalness: 0,
+        sheen: 0.35,
+        sheenRoughness: 0.55,
+        sheenColor: new THREE.Color(color).offsetHSL(0, 0.02, 0.12),
+        emissive: emissive || 0x000000,
+        emissiveIntensity: intensity || 0
+      });
+    }
+    const red = fabric(0xc62828);
+    const rose = fabric(0xc45362);
+    const dim = fabric(0x7a3034);
+    const mint = fabric(0x3dce6a, 0x16a34a, 0.55);
+    const armMat = new THREE.MeshStandardMaterial({ color: 0x24262a, roughness: 0.55, metalness: 0.2 });
+
+    function seatBackGeometry() {
+      const w = 0.7;
+      const h = 0.78;
+      const r = 0.13;
+      const shape = new THREE.Shape();
+      shape.moveTo(-w / 2 + r, 0);
+      shape.lineTo(w / 2 - r, 0);
+      shape.absarc(w / 2 - r, r, r, -Math.PI / 2, 0, false);
+      shape.lineTo(w / 2, h - r);
+      shape.absarc(w / 2 - r, h - r, r, 0, Math.PI / 2, false);
+      shape.lineTo(-w / 2 + r, h);
+      shape.absarc(-w / 2 + r, h - r, r, Math.PI / 2, Math.PI, false);
+      shape.lineTo(-w / 2, r);
+      shape.absarc(-w / 2 + r, r, r, Math.PI, Math.PI * 1.5, false);
+      const geo = new THREE.ExtrudeGeometry(shape, {
+        depth: 0.16,
+        bevelEnabled: true,
+        bevelThickness: 0.012,
+        bevelSize: 0.014,
+        bevelSegments: 3,
+        curveSegments: 14
+      });
+      geo.translate(0, 0.3, -0.08);
+      geo.computeVertexNormals();
+      return geo;
+    }
+    const backGeo = seatBackGeometry();
+    const panGeo = new THREE.BoxGeometry(0.62, 0.1, 0.5);
+    const armGeo = new THREE.BoxGeometry(0.08, 0.07, 0.55);
+    const postGeo = new THREE.BoxGeometry(0.06, 0.28, 0.08);
+    const rollGeo = new THREE.CylinderGeometry(0.075, 0.075, 0.64, 18);
+
+    function chair(material) {
+      const group = new THREE.Group();
+      const back = new THREE.Mesh(backGeo, material);
+      back.position.set(0, 0, 0.16);
+      back.rotation.x = 0.05;
+      const pan = new THREE.Mesh(panGeo, material);
+      pan.position.set(0, 0.42, -0.1);
+      const roll = new THREE.Mesh(rollGeo, material);
+      roll.rotation.z = Math.PI / 2;
+      roll.position.set(0, 1.02, 0.2);
+      const left = new THREE.Mesh(armGeo, armMat);
+      left.position.set(-0.46, 0.58, 0.02);
+      left.rotation.z = 0.12;
+      const right = new THREE.Mesh(armGeo, armMat);
+      right.position.set(0.46, 0.58, 0.02);
+      right.rotation.z = -0.12;
+      const leftPost = new THREE.Mesh(postGeo, armMat);
+      leftPost.position.set(-0.37, 0.44, 0.16);
+      const rightPost = leftPost.clone();
+      rightPost.position.x = 0.37;
+      group.add(back, pan, roll, left, right, leftPost, rightPost);
+      group.userData.parts = [back, pan, roll];
+      return group;
+    }
+
+    const canvas = document.querySelector("#stage");
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+    scene.fog = new THREE.Fog(0x000000, 30, 52);
+    const camera = new THREE.PerspectiveCamera(52, 1, 0.08, 100);
+    const look = new THREE.Vector3(0, 2.3, SCREEN_Z);
+
+    scene.add(new THREE.AmbientLight(0x16110f, 0.2));
+    RectAreaLightUniformsLib.init();
+    const screenGlow = new THREE.RectAreaLight(0xfff4ea, 14, SCREEN_W, SCREEN_H);
+    screenGlow.position.set(0, SCREEN_Y, 0.55);
+    screenGlow.lookAt(0, 1.6, 18);
+    scene.add(screenGlow);
+
+    const shell = new THREE.MeshStandardMaterial({ color: 0x070605, roughness: 1 });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(48, 40), shell);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.02;
+    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(48, 40), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+    ceiling.rotation.x = Math.PI / 2;
+    ceiling.position.y = 14.5;
+    const mask = new THREE.Mesh(new THREE.PlaneGeometry(52, 24), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+    mask.position.set(0, 7.2, SCREEN_Z - 0.45);
+    const backWall = new THREE.Mesh(new THREE.PlaneGeometry(48, 14), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+    backWall.position.set(0, 5, 28);
+    scene.add(floor, ceiling, mask, backWall);
+
+    const video = document.createElement("video");
+    video.src = new URL("The Mission (1999) 鎗火 - Movie Trailer - Far East Films - Far East Films (720p, h264).mp4", document.baseURI).href;
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.setAttribute("playsinline", "");
+    video.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none";
+    document.body.append(video);
+    const texture = new THREE.VideoTexture(video);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const crop = (16 / 9) / (SCREEN_W / SCREEN_H);
+    texture.repeat.set(1, crop);
+    texture.offset.set(0, (1 - crop) / 2);
+    const screen = new THREE.Mesh(
+      new THREE.PlaneGeometry(SCREEN_W, SCREEN_H),
+      new THREE.MeshBasicMaterial({ map: texture })
+    );
+    screen.position.set(0, SCREEN_Y, SCREEN_Z);
+    const bezel = new THREE.Mesh(
+      new THREE.PlaneGeometry(SCREEN_W + 0.55, SCREEN_H + 0.5),
+      new THREE.MeshBasicMaterial({ color: 0x050505 })
+    );
+    bezel.position.set(0, SCREEN_Y, SCREEN_Z - 0.06);
+    scene.add(bezel, screen);
+
+    let soundOn = false;
+    function playTrailer() {
+      video.muted = !soundOn;
+      const pending = video.play();
+      if (pending) pending.catch(() => {});
+    }
+    function setSound(on) {
+      soundOn = on;
+      document.querySelector("#sound").textContent = on ? "Mute" : "Sound";
+      playTrailer();
+    }
+
+    seats.forEach((seat) => {
+      const material = seat.taken ? dim : seat.recliner ? rose : red;
+      const mesh = chair(material);
+      mesh.position.set(seat.x, seat.y, seat.z);
+      mesh.userData.seat = seat;
+      seat.mesh = mesh;
+      scene.add(mesh);
+    });
+
+    function prepareAudience(root) {
+      root.traverse((obj) => {
+        if (!obj.isMesh) return;
+        obj.frustumCulled = false;
+        const materials = [].concat(obj.material);
+        materials.forEach((material) => {
+          if (!material) return;
+          material.side = THREE.DoubleSide;
+          if (material.transparent) {
+            material.alphaTest = 0.45;
+            material.transparent = false;
+            material.depthWrite = true;
+          }
+        });
+      });
+    }
+
+    const audience = { man: null, woman: null };
+    function seatAudience() {
+      if (!audience.man || !audience.woman) return;
+      seats.forEach((seat) => {
+        if (!seat.taken || seat.mesh.userData.person) return;
+        const person = ((seat.r + seat.n) % 2 === 0 ? audience.woman : audience.man).clone(true);
+        const yaw = ((seat.r * 12 + seat.n) % 5 - 2) * 0.04;
+        person.rotation.x = Math.PI / 2;
+        person.scale.setScalar(0.01);
+        const holder = new THREE.Group();
+        holder.rotation.y = Math.PI + yaw;
+        holder.position.set(0, 0.06, 0.02);
+        holder.add(person);
+        seat.mesh.add(holder);
+        seat.mesh.userData.person = holder;
+      });
+    }
+
+    const audienceLoader = new GLTFLoader();
+    ["man", "woman"].forEach((name) => {
+      audienceLoader.load(new URL(name + ".glb", document.baseURI).href, (gltf) => {
+        prepareAudience(gltf.scene);
+        audience[name] = gltf.scene;
+        seatAudience();
+      });
+    });
+
+    let selected = seats.find((seat) => seat.id === "B4");
+    let mode = "map";
+    let fly = null;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function paintSeat(seat, on) {
+      const material = on ? mint : seat.taken ? dim : seat.recliner ? rose : red;
+      seat.mesh.userData.parts.forEach((part) => { part.material = material; });
+    }
+    paintSeat(selected, true);
+
+    function metrics(seat) {
+      const eye = new THREE.Vector3(seat.x, seat.y + 1.05, seat.z - 0.02);
+      const target = new THREE.Vector3(seat.x * 0.42, eye.y + 0.55, SCREEN_Z);
+      const distance = eye.distanceTo(target);
+      const horizontal = Math.hypot(seat.x, seat.z - SCREEN_Z);
+      const fov = THREE.MathUtils.radToDeg(2 * Math.atan((SCREEN_W / 2) / horizontal));
+      const offset = seat.x;
+      const side = Math.abs(offset) < 0.4 ? "centre" : offset < 0 ? "left of centre" : "right of centre";
+      const spot = seat.r <= 2 ? "Up close" : seat.r <= 5 ? "Sweet spot" : "Full picture";
+      const price = seat.recliner ? film.recliner : film.standard;
+      return { distance, fov, offset, side, spot, price, eye, target };
+    }
+
+    const grid = document.querySelector("#grid");
+    ROWS.forEach((row, r) => {
+      const line = document.createElement("div");
+      line.className = "flex items-center justify-center gap-1.5";
+      line.style.transform = `scale(${0.82 + r * 0.028})`;
+      const label = document.createElement("span");
+      label.className = "w-4 text-[11px] text-zinc-500";
+      label.textContent = row;
+      line.append(label);
+      seats.filter((seat) => seat.row === row).forEach((seat) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "seat" + (seat.taken ? " taken" : "") + (seat.recliner ? " recliner" : "");
+        button.disabled = seat.taken;
+        button.setAttribute("aria-label", `Row ${seat.row} seat ${seat.n}${seat.taken ? ", taken" : ""}`);
+        button.dataset.id = seat.id;
+        button.addEventListener("click", () => choose(seat.id));
+        seat.button = button;
+        line.append(button);
+      });
+      grid.append(line);
+    });
+
+    function choose(id) {
+      const next = seats.find((seat) => seat.id === id && !seat.taken);
+      if (!next || mode !== "map") return;
+      paintSeat(selected, false);
+      selected.button.classList.remove("selected");
+      selected.button.textContent = "";
+      selected = next;
+      paintSeat(selected, true);
+      selected.button.classList.add("selected");
+      selected.button.textContent = String(selected.n);
+      const info = metrics(selected);
+      document.querySelector("#pick-label").textContent = `Row ${selected.row} · Seat ${selected.n}`;
+      document.querySelector("#pick-price").textContent = hkd(info.price);
+    }
+    function hkd(n) { return "HK$" + Math.round(n); }
+    choose("B4");
+
+    function fillSheet() {
+      const info = metrics(selected);
+      document.querySelector("#view-pill").textContent = `View from ${selected.row}${selected.n}`;
+      document.querySelector("#seat-name").textContent = `Row ${selected.row}, Seat ${selected.n}`;
+      document.querySelector("#seat-meta").textContent = `${selected.recliner ? "Recliner" : "Standard"} · ${info.spot}`;
+      document.querySelector("#sheet-price").textContent = hkd(info.price);
+      document.querySelector("#book").textContent = "Hold";
+    }
+
+    function quad(a, b, c, t) {
+      const u = 1 - t;
+      return new THREE.Vector3(
+        u * u * a.x + 2 * u * t * b.x + t * t * c.x,
+        u * u * a.y + 2 * u * t * b.y + t * t * c.y,
+        u * u * a.z + 2 * u * t * b.z + t * t * c.z
+      );
+    }
+    function ease(t) { return 1 - Math.pow(1 - t, 3); }
+    function flight(seat) {
+      const info = metrics(seat);
+      const overhead = new THREE.Vector3(seat.x * 0.88, seat.y + 7.6, seat.z + 0.35);
+      const overheadLook = new THREE.Vector3(seat.x * 0.82, 0.25, seat.z - 2.8);
+      const ctrl = new THREE.Vector3(seat.x * 0.78, seat.y + 4.6, seat.z + 0.15);
+      const ctrlLook = new THREE.Vector3(seat.x * 0.74, 1.6, Math.max(2.4, seat.z - 7));
+      return { info, overhead, overheadLook, ctrl, ctrlLook };
+    }
+    function beginFly(fromP, ctrlP, toP, fromL, ctrlL, toL, done) {
+      if (reduce) {
+        camera.position.copy(toP);
+        look.copy(toL);
+        if (done) done();
+        return;
+      }
+      fly = { fromP, ctrlP, toP, fromL, ctrlL, toL, t: 0, done };
+    }
+
+    function enterSeat() {
+      if (mode !== "map") return;
+      mode = "flying";
+      const path = flight(selected);
+      camera.position.copy(path.overhead);
+      look.copy(path.overheadLook);
+      document.querySelector("#stage").classList.remove("is-off");
+      document.querySelector("#map").classList.add("is-hidden");
+      const chrome = document.querySelector("#pov-chrome");
+      chrome.classList.remove("hidden");
+      document.querySelector("#sheet").classList.remove("is-open");
+      fillSheet();
+      yaw = 0;
+      pitch = 0;
+      beginFly(path.overhead, path.ctrl, path.info.eye, path.overheadLook, path.ctrlLook, path.info.target, () => {
+        mode = "seat";
+        document.querySelector("#sheet").classList.add("is-open");
+      });
+    }
+    function leaveSeat() {
+      if (mode === "map") return;
+      mode = "flying";
+      document.querySelector("#sheet").classList.remove("is-open");
+      const path = flight(selected);
+      beginFly(camera.position.clone(), path.ctrl, path.overhead, look.clone(), path.ctrlLook, path.overheadLook, () => {
+        mode = "map";
+        document.querySelector("#pov-chrome").classList.add("hidden");
+        showMap();
+        document.querySelector("#stage").classList.add("is-off");
+        video.pause();
+        const book = document.querySelector("#book");
+        book.disabled = false;
+        book.textContent = "Hold";
+      });
+    }
+
+    function showMap() {
+      const map = document.querySelector("#map");
+      map.style.transition = "none";
+      map.classList.remove("is-hidden");
+      map.offsetWidth;
+      map.style.transition = "";
+    }
+    function openFilm(id) {
+      film = films[id];
+      document.querySelector("#film-title").textContent = `《${film.zh}》 ${film.title}`;
+      document.querySelector("#film-formats").textContent = film.formats;
+      document.querySelector("#film-meta").textContent = film.meta;
+      const list = document.querySelector("#film-slots");
+      list.replaceChildren();
+      film.slots.forEach((slot) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "slot mt-3 w-full border-t-2 border-[#b4233a] bg-white px-3 py-3 text-left shadow-sm";
+        button.dataset.label = slot.label;
+        button.dataset.standard = String(slot.standard);
+        button.dataset.recliner = String(slot.recliner);
+        const row = document.createElement("span");
+        row.className = "flex items-baseline justify-between text-[18px] font-semibold";
+        const time = document.createElement("span");
+        time.textContent = slot.time;
+        const price = document.createElement("span");
+        price.textContent = hkd(slot.standard);
+        row.append(time, price);
+        const house = document.createElement("span");
+        house.className = "mt-1 block text-[13px] text-[#3e5348]";
+        house.textContent = slot.house;
+        const tag = document.createElement("span");
+        tag.className = "mt-2 inline-block bg-[#1d6b58] px-2 py-1 text-[12px] text-white";
+        tag.textContent = film.zh;
+        button.append(row, house, tag);
+        list.append(button);
+      });
+      document.querySelector("#times").classList.remove("is-hidden");
+      document.querySelector("#lobby").classList.add("is-hidden");
+    }
+    document.querySelectorAll(".film").forEach((button) => {
+      button.addEventListener("click", () => openFilm(button.dataset.film));
+    });
+    document.querySelector("#to-lobby").addEventListener("click", () => {
+      document.querySelector("#lobby").classList.remove("is-hidden");
+      document.querySelector("#times").classList.add("is-hidden");
+    });
+    document.querySelectorAll(".day").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".day").forEach((item) => {
+          const on = item === button;
+          item.classList.toggle("border-[#0e3a30]", on);
+          item.classList.toggle("border-transparent", !on);
+          item.classList.toggle("font-semibold", on);
+          item.classList.toggle("text-[#5c675f]", !on);
+          item.setAttribute("aria-selected", String(on));
+        });
+      });
+    });
+    document.querySelector("#film-slots").addEventListener("click", (event) => {
+      const button = event.target.closest(".slot");
+      if (!button) return;
+      film.standard = Number(button.dataset.standard);
+      film.recliner = Number(button.dataset.recliner);
+      document.querySelector("#now-showing").textContent = `${button.dataset.label} · Hall 3`;
+      document.querySelector("#pick-price").textContent = hkd(metrics(selected).price);
+      const next = new URL(film.trailer, document.baseURI).href;
+      if (video.src !== next) {
+        video.pause();
+        video.src = next;
+        video.load();
+      }
+      showMap();
+      document.querySelector("#times").classList.add("is-hidden");
+      playTrailer();
+    });
+    document.querySelector("#to-times").addEventListener("click", () => {
+      if (mode !== "map") return;
+      document.querySelector("#times").classList.remove("is-hidden");
+      document.querySelector("#map").classList.add("is-hidden");
+      video.pause();
+    });
+    document.querySelector("#sound").addEventListener("click", () => setSound(!soundOn));
+    document.querySelector("#continue").addEventListener("click", () => {
+      setSound(true);
+      enterSeat();
+    });
+    document.querySelector("#back-map").addEventListener("click", leaveSeat);
+    document.querySelector("#change").addEventListener("click", leaveSeat);
+    document.querySelector("#book").addEventListener("click", () => {
+      const button = document.querySelector("#book");
+      button.textContent = "Held for you";
+      button.disabled = true;
+    });
+
+    let yaw = 0;
+    let pitch = 0;
+    canvas.addEventListener("pointerdown", (event) => {
+      if (mode !== "seat") return;
+      canvas.setPointerCapture(event.pointerId);
+      canvas.dataset.x = String(event.clientX);
+      canvas.dataset.y = String(event.clientY);
+    });
+    canvas.addEventListener("pointermove", (event) => {
+      if (mode !== "seat" || !canvas.hasPointerCapture(event.pointerId)) return;
+      yaw += (event.clientX - Number(canvas.dataset.x)) * 0.0022;
+      pitch += (event.clientY - Number(canvas.dataset.y)) * 0.0014;
+      yaw = Math.max(-0.45, Math.min(0.45, yaw));
+      pitch = Math.max(-0.2, Math.min(0.22, pitch));
+      canvas.dataset.x = String(event.clientX);
+      canvas.dataset.y = String(event.clientY);
+    });
+
+    const clock = new THREE.Clock();
+    function tick() {
+      const dt = clock.getDelta();
+      if (fly) {
+        fly.t = Math.min(1, fly.t + dt / 1.15);
+        const e = ease(fly.t);
+        camera.position.copy(quad(fly.fromP, fly.ctrlP, fly.toP, e));
+        look.copy(quad(fly.fromL, fly.ctrlL, fly.toL, e));
+        if (fly.t >= 1) {
+          const done = fly.done;
+          fly = null;
+          if (done) done();
+        }
+      }
+      const info = metrics(selected);
+      const aim = (mode === "seat" && !fly ? info.target : look).clone();
+      if (mode === "seat" && !fly) {
+        aim.x += yaw * 2.4;
+        aim.y += pitch * -1.6;
+      }
+      camera.lookAt(aim);
+      renderer.render(scene, camera);
+      requestAnimationFrame(tick);
+    }
+    function resize() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      if (!w || !h) return;
+      const nextFov = h > w ? 64 : 52;
+      if (camera.fov !== nextFov) camera.fov = nextFov;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+    }
+    new ResizeObserver(resize).observe(canvas);
+    resize();
+    const start = metrics(selected);
+    camera.position.set(start.eye.x, start.eye.y + 8, start.eye.z + 6);
+    look.copy(start.target);
+    tick();
+  </script>
+</body>
+</html>
