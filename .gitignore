@@ -3,5 +3,6 @@
 *.zip
 .impeccable
 cinema-demo.MP4
+demo-cinema-*.MP4
 node_modules
 dist

@@ -1,12 +1,13 @@
 .hkc {
   position: relative;
-  height: 100dvh;
+  height: 100svh;
   overflow: hidden;
   background: #070708;
   color: #f4f4f5;
   font-family: ui-sans-serif, system-ui, sans-serif;
   color-scheme: dark;
 }
+.hkc, .hkc * { box-sizing: border-box; }
 .hkc-fill { height: 100%; }
 .hkc button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 .hkc button:focus-visible { outline: 2px solid #6ee7b7; outline-offset: 3px; }
@@ -16,8 +17,14 @@
 .hkc-lobby, .hkc-times {
   position: absolute; inset: 0; z-index: 30;
   display: flex; justify-content: center;
-  background: #0e3a30; color: #1c241c; color-scheme: light;
+  color: #1c241c; color-scheme: light;
 }
+.hkc-lobby { flex-direction: column; align-items: center; background: #f4f1e8; }
+.hkc-lobby .hkc-brand { width: 100%; }
+.hkc-lobby .hkc-column { max-width: 680px; height: auto; flex: 1; min-height: 0; }
+.hkc-lobby .hkc-films { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.hkc-lobby .hkc-film { width: auto; height: auto; }
+.hkc-times { background: #0e3a30; }
 .hkc-column {
   display: flex; flex-direction: column;
   width: 100%; max-width: 430px; height: 100%;
@@ -37,7 +44,7 @@
 .hkc-scroll { flex: 1; overflow: auto; padding: 16px 16px 24px; }
 .hkc-films { display: flex; flex-wrap: wrap; gap: 16px; }
 .hkc-film { width: 158px; text-align: left; }
-.hkc-film img { display: block; width: 100%; aspect-ratio: 2 / 3; object-fit: cover; object-position: top; color-scheme: only light; pointer-events: none; }
+.hkc-film img { display: block; width: 100%; height: auto; aspect-ratio: auto; object-fit: contain; object-position: top; color-scheme: only light; pointer-events: none; }
 .hkc-film strong { display: block; margin-top: 8px; font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hkc-tags { display: flex; gap: 4px; margin-top: 6px; }
 .hkc-tags span, .hkc-format { border: 1px solid #1c241c; border-radius: 2px; padding: 2px 6px; font-size: 11px; }
@@ -63,20 +70,20 @@
   position: absolute; inset: 0; z-index: 10;
   display: flex; flex-direction: column; background: #070708;
 }
-.hkc-map header, .hkc-map footer, .hkc-sheet { width: 100%; max-width: 28rem; margin: 0 auto; }
+.hkc-map header, .hkc-map footer, .hkc-sheet { width: 100%; max-width: 28rem; margin: 0 auto; flex: none; }
 .hkc-map header { border-bottom: 1px solid #2a2a2e; padding: 16px 16px 12px; }
 .hkc-map header button { font-size: 13px; font-weight: 500; color: #d4d4d8; }
 .hkc-map h1 { margin: 8px 0 0; font-size: 18px; font-weight: 600; line-height: 1.5rem; }
 .hkc-map header p { margin: 0; font-size: 13px; color: #a1a1aa; }
-.hkc-screen { width: 100%; max-width: 28rem; margin: 20px auto 0; padding: 0 32px; }
+.hkc-screen { width: 100%; max-width: 28rem; margin: 12px auto 0; padding: 0 32px; flex: none; }
 .hkc-screen svg { display: block; width: 100%; color: #e4e4e7; }
 .hkc-screen p { margin: 0; text-align: center; font-size: 11px; letter-spacing: 0.22em; color: #71717a; }
-.hkc-grid { flex: 1; overflow: auto; width: 100%; max-width: 28rem; margin: 8px auto 0; padding: 0 16px; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
-.hkc-row { display: flex; align-items: center; justify-content: center; gap: 6px; }
-.hkc-row span { width: 16px; font-size: 11px; color: #71717a; }
+.hkc-grid { flex: 1; min-width: 0; min-height: 0; overflow: auto; width: 100%; max-width: 28rem; margin: 8px auto 0; padding: 0 12px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.hkc-row { display: flex; align-items: center; justify-content: center; gap: 3px; width: 100%; margin-inline: auto; }
+.hkc-row span { width: 14px; flex: none; font-size: 11px; color: #71717a; }
 .hkc-seat {
-  width: 26px; height: 22px; border-radius: 5px 5px 7px 7px;
-  background: #3a3a42; box-shadow: inset 0 8px 0 #2a2a30; color: inherit;
+  flex: 1 1 0; width: auto; min-width: 0; max-width: 28px; height: 20px; border-radius: 4px 4px 6px 6px;
+  background: #3a3a42; box-shadow: inset 0 7px 0 #2a2a30; color: inherit;
 }
 .hkc-seat.taken { background: #6d6d76; box-shadow: inset 0 8px 0 #55555c; cursor: default; }
 .hkc-seat.recliner { background: #8d5d66; box-shadow: inset 0 8px 0 #6e454c; }
@@ -85,15 +92,15 @@
   box-shadow: inset 0 8px 0 #2dd4bf, 0 0 0 4px rgba(94, 234, 212, 0.28);
   font-size: 10px; font-weight: 700;
 }
-.hkc-map footer { border-top: 1px solid #2a2a2e; padding: 12px 16px 20px; }
+.hkc-map footer { border-top: 1px solid #2a2a2e; padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
 .hkc-key { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: #a1a1aa; }
 .hkc-key i { display: inline-block; width: 12px; height: 10px; margin-right: 6px; border-radius: 2px; vertical-align: -1px; }
 .hkc-pick { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: 12px; }
 .hkc-pick p { margin: 0; font-size: 15px; font-weight: 500; }
 .hkc-pick strong { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.hkc-go, .hkc-hold { background: #3cba8b; color: #052e22; font-weight: 600; }
-.hkc-go { margin-top: 12px; height: 48px; width: 100%; border-radius: 6px; font-size: 16px; }
-.hkc-go:hover, .hkc-hold:hover { background: #5eead4; }
+.hkc button.hkc-go, .hkc button.hkc-hold { background: #3cba8b; color: #052e22; font-weight: 600; }
+.hkc button.hkc-go { margin-top: 12px; height: 48px; width: 100%; border-radius: 6px; font-size: 16px; }
+.hkc button.hkc-go:hover, .hkc button.hkc-hold:hover { background: #5eead4; }
 
 .hkc-chrome { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
 .hkc-top { pointer-events: auto; display: flex; align-items: flex-start; justify-content: space-between; padding: 16px; }
@@ -102,23 +109,25 @@
 .hkc-pill i { width: 6px; height: 6px; border-radius: 999px; background: #5eead4; }
 .hkc-sound { height: 40px; border-radius: 999px; background: rgba(0,0,0,0.5); color: #fff; padding: 0 12px; font-size: 12px; font-weight: 600; }
 .hkc-sheet {
-  pointer-events: auto; position: absolute; left: 0; right: 0; bottom: 0;
-  border-top: 1px solid #3f3f46; background: #141416;
-  padding: 8px 12px max(8px, env(safe-area-inset-bottom));
-  box-shadow: 0 -8px 18px rgba(0,0,0,0.45);
-  transform: translateY(110%);
+  pointer-events: auto; position: absolute;
+  left: 12px; right: 12px; width: auto; max-width: 28rem; margin-inline: auto;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 8px;
+  border: 1px solid #3f3f46; border-radius: 16px; background: #18181b;
+  padding: 12px 14px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+  transform: translateY(120%);
   transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .hkc-sheet.is-open { transform: translateY(0); }
-.hkc-sheet-row { display: flex; align-items: center; gap: 12px; }
-.hkc-sheet-main { min-width: 0; flex: 1; }
-.hkc-sheet-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.hkc-sheet h2 { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 600; line-height: 1.25rem; }
-.hkc-sheet strong { font-size: 15px; font-variant-numeric: tabular-nums; }
-.hkc-sheet-main p { margin: 0; font-size: 12px; line-height: 1rem; color: #a1a1aa; }
-.hkc-change { height: 36px; font-size: 13px; font-weight: 500; color: #d4d4d8; }
-.hkc-hold { height: 36px; border-radius: 6px; padding: 0 16px; font-size: 14px; }
-.hkc-hold:disabled { background: #3f3f46; color: #d4d4d8; cursor: default; }
+.hkc-sheet-top, .hkc-sheet-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hkc-sheet h2 { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 600; line-height: 1.25rem; }
+.hkc-sheet strong { flex: none; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.hkc-sheet p { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 1.15rem; color: #d4d4d8; }
+.hkc-sheet-actions { display: flex; align-items: center; gap: 2px; flex: none; }
+.hkc button.hkc-change { height: 36px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #f4f4f5; }
+.hkc button.hkc-hold { height: 36px; min-width: 72px; border-radius: 8px; padding: 0 14px; font-size: 14px; white-space: nowrap; }
+.hkc button.hkc-hold:disabled { background: #3f3f46; color: #d4d4d8; cursor: default; }
 @media (prefers-reduced-motion: reduce) {
   .hkc-sheet { transition: none; }
 }

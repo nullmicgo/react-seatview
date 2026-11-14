@@ -127,7 +127,7 @@ export function CinemaPreview({
           </div>
           <div className="hkc-grid" role="grid" aria-label="Seats">
             {ROWS.map((row, r) => (
-              <div className="hkc-row" key={row} style={{ transform: `scale(${0.82 + r * 0.028})` }}>
+              <div className="hkc-row" key={row} style={{ width: `${76 + r * 3}%` }}>
                 <span>{row}</span>
                 {seats.filter((seat) => seat.row === row).map((seat) => (
                   <button
@@ -168,16 +168,16 @@ export function CinemaPreview({
             <button type="button" className="hkc-sound" onClick={toggleSound}>{soundOn ? "Mute" : "Sound"}</button>
           </div>
           <section className={sheetOpen ? "hkc-sheet is-open" : "hkc-sheet"}>
-            <div className="hkc-sheet-row">
-              <div className="hkc-sheet-main">
-                <div className="hkc-sheet-line">
-                  <h2>Row {selected.row}, Seat {selected.n}</h2>
-                  <strong>{hkd(price)}</strong>
-                </div>
-                <p>{selected.recliner ? "Recliner" : "Standard"} · {seatSpot(selected)}</p>
+            <div className="hkc-sheet-top">
+              <h2>Row {selected.row}, Seat {selected.n}</h2>
+              <strong>{hkd(price)}</strong>
+            </div>
+            <div className="hkc-sheet-bottom">
+              <p>{selected.recliner ? "Recliner" : "Standard"} · {seatSpot(selected)}</p>
+              <div className="hkc-sheet-actions">
+                <button type="button" className="hkc-change" onClick={leaveSeat}>Change</button>
+                <button type="button" className="hkc-hold" disabled={held} onClick={() => setHeld(true)}>{held ? "Held for you" : "Hold"}</button>
               </div>
-              <button type="button" className="hkc-change" onClick={leaveSeat}>Change</button>
-              <button type="button" className="hkc-hold" disabled={held} onClick={() => setHeld(true)}>{held ? "Held for you" : "Hold"}</button>
             </div>
           </section>
         </div>
@@ -185,11 +185,11 @@ export function CinemaPreview({
 
       {screen === "lobby" && (
         <section className="hkc-lobby" aria-label="Films">
+          <header className="hkc-brand">
+            <h1>{venue.toUpperCase()}</h1>
+            <p>{venueZh}</p>
+          </header>
           <div className="hkc-column">
-            <header className="hkc-brand">
-              <h1>{venue.toUpperCase()}</h1>
-              <p>{venueZh}</p>
-            </header>
             <div className="hkc-dates" role="tablist" aria-label="Dates">
               {dates.map((date, index) => (
                 <button key={date} type="button" aria-selected={index === dateIndex} onClick={() => setDateIndex(index)}>{date}</button>

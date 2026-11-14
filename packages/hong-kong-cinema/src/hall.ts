@@ -162,10 +162,10 @@ export class Hall {
         const person = source.clone(true);
         const yaw = ((seat.r * 12 + seat.n) % 5 - 2) * 0.04;
         person.rotation.x = Math.PI / 2;
-        person.scale.setScalar(0.01);
+        person.scale.setScalar(0.0084);
         const holder = new THREE.Group();
         holder.rotation.y = Math.PI + yaw;
-        holder.position.set(0, 0.06, 0.02);
+        holder.position.set(0, 0.02, 0.02);
         holder.add(person);
         mesh.add(holder);
         mesh.userData.person = holder;

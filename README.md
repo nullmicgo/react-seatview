@@ -46,7 +46,7 @@ Developed by [Michael Lau](http://nullmicgo.com/).
 
 A walk through the lobby, a showtime, a seat, and the view from that seat. The recording has sound. Unmute the player if you want the trailer.
 
-https://github.com/user-attachments/assets/76103fa6-e00a-4413-a121-175cbea6be64
+https://github.com/user-attachments/assets/3449dfe5-6c99-41cd-bec3-d0f84f0e0cb1
 
 ## Screen flow
 
@@ -60,7 +60,7 @@ Lobby  →  Showtimes  →  Seat chart  →  Seat view
 1. **Lobby.** Date chips and two poster cards. The chips only move the underline. Both films stay listed on every date. The footer states that this is a mock.
 2. **Showtimes.** Tapping a poster fills the title, rating line, and that film's slots. Each slot shows a time, the standard price, and `HOUSE 3`. Back returns to the lobby.
 3. **Seat chart.** Tapping a slot writes that slot's standard and recliner prices, swaps the trailer if the film changed, and shows Hall 3. Row A is nearest the screen. Rows H and I are recliners. Taken seats cannot be selected. The footer shows the chosen seat and its price.
-4. **Seat view.** **See this seat** unmutes the trailer and flies the camera from above the chair down to sitting height. A one-line bar names the seat. **Hold** only changes the button to "Held for you" in this browser. **Change**, or the back chevron, flies back to the chart and pauses the video. **Showtimes** returns to the slot list.
+4. **Seat view.** **See this seat** unmutes the trailer and flies the camera from above the chair down to sitting height. A card at the bottom names the seat and the price on the first line, and puts the seat type, **Change**, and **Hold** on the second. **Hold** only changes the button to "Held for you" in this browser. **Change**, or the back chevron, flies back to the chart and pauses the video. **Showtimes** returns to the slot list.
 
 Dragging on the seat view looks a little left, right, up, and down. The look returns to the seat's aim when you leave.
 
@@ -137,7 +137,7 @@ sequenceDiagram
   Page->>Camera: Place overhead, then bezier to the eye
   Note over Camera: 1.15 seconds, or a jump if motion is reduced
   Camera->>Mode: flying to seat
-  Page-->>Visitor: Slide up the one-line seat bar
+  Page-->>Visitor: Slide up the seat card
   Visitor->>Camera: Drag
   Note over Camera: Yaw and pitch offset the look target
   Visitor->>Page: Change, or the back chevron
@@ -154,17 +154,18 @@ Hold does not leave the seat. It only disables the button and changes its label.
 ```mermaid
 sequenceDiagram
   participant Page as Page
-  participant CDN as jsDelivr
+  participant Three as three
   participant Scene as Scene
-  participant Models as man.glb and woman.glb
+  participant Models as GLB files
 
-  Page->>CDN: Import Three.js, GLTFLoader, RectAreaLightUniformsLib
+  Page->>Three: Import THREE, GLTFLoader, RectAreaLightUniformsLib
   Page->>Scene: Renderer, black fog, camera
   Page->>Scene: Ambient light, then init the rect-area uniforms
   Page->>Scene: Screen-sized RectAreaLight aimed down the aisle
-  Page->>Scene: Floor, ceiling, mask, back wall, screen, 108 chairs
-  Page->>Models: Load both sitting models
-  Models-->>Scene: One model on each taken seat
+  Page->>Scene: Floor, ceiling, mask, back wall, screen, 108 empty chair groups
+  Page->>Models: Load cinema-seat.glb and clone it into every group
+  Page->>Models: Load man.glb and woman.glb
+  Models-->>Scene: One person on each taken seat
   Page->>Page: Start tick. Canvas class stays is-off
 ```
 
@@ -189,7 +190,7 @@ The sample prices, in HKD:
 
 Nine rows, A through I, twelve seats each, with an aisle between seats 6 and 7. The same list builds both the buttons and the 3D chairs.
 
-A seat is taken when it is not a recliner and `(rowIndex * 5 + seatNumber * 3) % 7 === 0`. That is a fixed pattern, not a booking system. The chart scales each row slightly so the back rows read as farther from the screen.
+A seat is taken when it is not a recliner and `(rowIndex * 5 + seatNumber * 3) % 7 === 0`. That is a fixed pattern, not a booking system. On the chart, row A is 76% of the chart width and each row behind it is 3% wider, so row I fills the width. The seats flex to fit the phone, which is why the price and **See this seat** stay on screen.
 
 Selecting a seat paints that chair mint in the 3D scene and writes the row, number, and price into the footer. The default seat is B4.
 
@@ -210,12 +211,12 @@ Each seat is placed from its row index `r` (A is 0) and number `n`:
 
 ```text
 x = left of the aisle for seats 1–6, right of the aisle for seats 7–12
-    aisle gap 1.85, seat pitch 0.84
+    aisle gap 1.05, seat pitch 0.62
 z = 7.4 + r * 1.46
 y = 0.15 + r * 0.22
 ```
 
-Row A is the closest row. Each row behind it is 1.46 m farther from the screen and 0.22 m higher, which is the floor rake. The 2D chart uses the same list, and scales each row by `0.82 + r * 0.028` so the back rows look farther away.
+Row A is the closest row. Each row behind it is 1.46 m farther from the screen and 0.22 m higher, which is the floor rake. The 2D chart uses the same list. It does not use these metre values. It draws row A at 76% of the chart width and adds 3% of width per row back.
 
 ### A chair
 
@@ -271,9 +272,9 @@ The fix is a child and a parent:
 
 ```text
 child.rotation.x = π / 2      stand the -z body up onto +y
-child.scale      = 0.01       centimetres to metres
+child.scale      = 0.0084     centimetres to metres, small enough to sit in the headrest
 parent.rotation.y = π + yaw   turn the face from the camera toward the screen
-parent.position  = (0, 0.06, 0.02)
+parent.position  = (0, 0.02, 0.02)
 ```
 
 The parent is added to the chair group, so the person moves with that seat. `(rowIndex + seatNumber) % 2 === 0` uses the woman. The other taken seats use the man. A small yaw, a few degrees, keeps the row from looking cloned. Hair and glasses come in with blended transparency. Those materials are switched to `alphaTest = 0.45`, `transparent = false`, and `depthWrite = true`, and every mesh is `frustumCulled = false`. Without that, the hair sorts in front of the screen or disappears when the scaled bounds fall outside the frustum.
@@ -291,12 +292,25 @@ Vite prints a local URL. Opening the built files directly fails. ES modules and 
 
 | Path | Role |
 | --- | --- |
-| `packages/hong-kong-cinema` | The React library published to npm |
+| `packages/hong-kong-cinema` | The React library. It is not on npm until you publish it |
 | `apps/web` | This site, which renders `CinemaPreview` |
-| `apps/web/public` | Posters, trailers, and the two seated models |
-| `demo.mp4` | Walkthrough in this README |
+| `apps/web/public` | Posters, trailers, `cinema-seat.glb`, and the two seated models |
+| `demo.mp4` | The walkthrough encoded for this README |
 
 Posters and trailers are used here as a personal mock. They belong to their rights holders.
+
+## Publish to npm
+
+The package name `hong-kong-cinema` is free until the first publish. From this repository, on a machine logged in to npm:
+
+```bash
+npm login
+npm publish -w hong-kong-cinema --access public
+```
+
+`npm login` opens a browser to npmjs and stores the token on this machine. The workspace script builds the library first (`tsc`, `tsup`, and the stylesheet), then uploads `dist`, `README.md`, and `LICENSE`. React, React DOM, and Three.js stay as peer dependencies, so people install those alongside the package.
+
+After it succeeds, `npm install hong-kong-cinema` works from the Install section above. A later change needs a new version in `packages/hong-kong-cinema/package.json` before the next `npm publish`.
 
 ## Credits
 
