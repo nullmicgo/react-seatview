@@ -28,6 +28,110 @@ Lobby  →  Showtimes  →  Seat chart  →  Seat view
 
 Dragging on the seat view looks a little left, right, up, and down. The look returns to the seat's aim when you leave.
 
+## Sequence
+
+Four participants carry the visit. The page is the DOM. The hall is the Three.js scene, already running behind a hidden canvas. The video element is the trailer. Nothing here calls a server.
+
+### From the lobby to a held seat
+
+```mermaid
+sequenceDiagram
+  actor Visitor
+  participant Page as Page
+  participant Hall as Three.js hall
+  participant Video as Trailer
+
+  Visitor->>Page: Open the site
+  Page->>Hall: Build the hall and start the loop
+  Note over Hall: Canvas stays hidden on the lobby
+  Visitor->>Page: Tap a poster
+  Page->>Page: Fill that film's title and slots
+  Visitor->>Page: Tap a showtime
+  Page->>Video: Set that film's mp4 and play, muted
+  Page->>Page: Show the seat chart with that slot's prices
+  Visitor->>Page: Tap a free seat
+  Page->>Hall: Paint the previous chair back, paint this one mint
+  Visitor->>Page: See this seat
+  Page->>Video: Unmute
+  Page->>Hall: Show the canvas and fly down to the seat
+  Hall-->>Visitor: Sitting view
+  Visitor->>Page: Hold
+  Note over Page: The button reads Held for you. Nothing is booked.
+  Visitor->>Page: Change
+  Page->>Hall: Fly back overhead, then hide the canvas
+  Page->>Video: Pause
+```
+
+### Choosing a showtime
+
+```mermaid
+sequenceDiagram
+  actor Visitor
+  participant Slot as Showtime button
+  participant Film as Active film
+  participant Video as Trailer
+  participant Chart as Seat chart
+
+  Visitor->>Slot: Tap a time
+  Slot->>Film: Copy standard and recliner prices
+  Slot->>Chart: Write the showtime into the header
+  Slot->>Chart: Reprice the seat already selected
+  alt Trailer file changed
+    Slot->>Video: Pause, replace src, load
+  else Same film as the last slot
+    Slot->>Video: Keep the current src
+  end
+  Slot->>Chart: Show the chart and hide the slot list
+  Slot->>Video: play, still muted
+```
+
+Date chips are not in this sequence. Tapping one only moves the underline. Both films stay on the lobby for every date.
+
+### Seeing the seat, then leaving it
+
+```mermaid
+sequenceDiagram
+  actor Visitor
+  participant Page as Page
+  participant Camera as Camera
+  participant Mode as mode
+
+  Visitor->>Page: See this seat
+  Page->>Mode: map to flying
+  Page->>Camera: Place overhead, then bezier to the eye
+  Note over Camera: 1.15 seconds, or a jump if motion is reduced
+  Camera->>Mode: flying to seat
+  Page-->>Visitor: Slide up the one-line seat bar
+  Visitor->>Camera: Drag
+  Note over Camera: Yaw and pitch offset the look target
+  Visitor->>Page: Change, or the back chevron
+  Page->>Mode: seat to flying
+  Page->>Camera: Bezier from the eye back overhead
+  Camera->>Mode: flying to map
+  Page->>Page: Hide the canvas, pause the trailer, reset Hold
+```
+
+Hold does not leave the seat. It only disables the button and changes its label.
+
+### What the page builds before the first tap
+
+```mermaid
+sequenceDiagram
+  participant Page as Page
+  participant CDN as jsDelivr
+  participant Scene as Scene
+  participant Models as man.glb and woman.glb
+
+  Page->>CDN: Import Three.js, GLTFLoader, RectAreaLightUniformsLib
+  Page->>Scene: Renderer, black fog, camera
+  Page->>Scene: Ambient light, then init the rect-area uniforms
+  Page->>Scene: Screen-sized RectAreaLight aimed down the aisle
+  Page->>Scene: Floor, ceiling, mask, back wall, screen, 108 chairs
+  Page->>Models: Load both sitting models
+  Models-->>Scene: One model on each taken seat
+  Page->>Page: Start tick. Canvas class stays is-off
+```
+
 ## Technical solution
 
 The app is one page. DOM layers handle choosing a film and a seat. Three.js draws the hall behind them and is revealed only for the fly-in. There is no scene file, no backend, and no build. An import map loads Three.js 0.170 and two addons from a CDN:
@@ -171,7 +275,8 @@ Opening `index.html` as a file fails. ES modules and the model loader need an HT
 | `poster001.jpeg` | Poster for 《鎗火》 |
 | `Throw-Down-poster.jpg` | Poster for 《柔道龍虎榜》 |
 | `man.glb`, `woman.glb` | Seated audience on taken seats |
-| The two `.mp4` files | Trailers played on the cinema screen |
+| The two trailer `.mp4` files | Played on the cinema screen |
+| `demo.mp4` | Walkthrough in this README |
 
 Posters and trailers are used here as a personal mock. They belong to their rights holders.
 

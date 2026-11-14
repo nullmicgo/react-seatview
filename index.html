@@ -16,7 +16,8 @@
     #map.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
     #lobby.is-hidden, #times.is-hidden { visibility: hidden; pointer-events: none; }
     #stage.is-off { visibility: hidden; }
-    #lobby, #times { color: #1c241c; }
+    #lobby, #times { color: #1c241c; color-scheme: light; }
+    .film img { display: block; width: 100%; color-scheme: only light; pointer-events: none; }
     #sheet {
       transform: translateY(110%);
       transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -114,7 +115,7 @@
       <div class="flex-1 overflow-auto px-4 pb-6 pt-4">
         <div class="flex flex-wrap gap-4">
           <button type="button" class="film w-[158px] text-left" data-film="mission">
-            <img src="poster001.jpeg" alt="" class="aspect-[2/3] w-full object-cover object-top">
+            <img src="/poster001.jpeg" alt="" width="384" height="520" class="aspect-[2/3] w-full object-cover object-top">
             <span class="mt-2 block truncate text-[15px] font-medium">《鎗火》</span>
             <span class="mt-1.5 flex gap-1">
               <span class="rounded border border-[#1c241c] px-1.5 py-0.5 text-[11px]">2D</span>
@@ -122,7 +123,7 @@
             </span>
           </button>
           <button type="button" class="film w-[158px] text-left" data-film="throwdown">
-            <img src="Throw-Down-poster.jpg" alt="" class="aspect-[2/3] w-full object-cover object-top">
+            <img src="/Throw-Down-poster.jpg" alt="" width="270" height="369" class="aspect-[2/3] w-full object-cover object-top">
             <span class="mt-2 block truncate text-[15px] font-medium">《柔道龍虎榜》</span>
             <span class="mt-1.5 flex gap-1">
               <span class="rounded border border-[#1c241c] px-1.5 py-0.5 text-[11px]">2D</span>
