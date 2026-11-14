@@ -188,7 +188,7 @@ The sample prices, in HKD:
 
 ### Seat chart
 
-Nine rows, A through I, twelve seats each, with an aisle between seats 6 and 7. The same list builds both the buttons and the 3D chairs.
+Nine rows, A through I, twelve seats each. The same list builds both the buttons and the 3D chairs, and neighbouring seats use one gap in both.
 
 A seat is taken when it is not a recliner and `(rowIndex * 5 + seatNumber * 3) % 7 === 0`. That is a fixed pattern, not a booking system. On the chart, row A is 76% of the chart width and each row behind it is 3% wider, so row I fills the width. The seats flex to fit the phone, which is why the price and **See this seat** stay on screen.
 
@@ -210,11 +210,12 @@ The scene graph is small. A black floor, ceiling, a mask plane behind the screen
 Each seat is placed from its row index `r` (A is 0) and number `n`:
 
 ```text
-x = left of the aisle for seats 1–6, right of the aisle for seats 7–12
-    aisle gap 1.05, seat pitch 0.62
+x = (n - 6.5) * 0.62
 z = 7.4 + r * 1.46
 y = 0.15 + r * 0.22
 ```
+
+Every pair of neighbours is 0.62 m apart, including seats 6 and 7, so the hall matches the even gaps on the chart.
 
 Row A is the closest row. Each row behind it is 1.46 m farther from the screen and 0.22 m higher, which is the floor rake. The 2D chart uses the same list. It does not use these metre values. It draws row A at 76% of the chart width and adds 3% of width per row back.
 

@@ -10,8 +10,7 @@ export function buildSeats(): Seat[] {
       const recliner = r >= 7;
       const taken = !recliner && (r * 5 + n * 3) % 7 === 0;
       const pitch = 0.62;
-      const aisle = 1.05;
-      const x = n <= 6 ? -aisle / 2 - (6 - n) * pitch : aisle / 2 + (n - 7) * pitch;
+      const x = (n - (SEATS_PER_ROW + 1) / 2) * pitch;
       seats.push({
         id: row + n,
         row,
