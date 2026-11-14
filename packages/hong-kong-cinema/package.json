@@ -1,0 +1,64 @@
+{
+  "name": "hong-kong-cinema",
+  "version": "0.1.0",
+  "description": "React seat preview for a cinema hall. Pick a film, pick a seat, and see the screen from that chair.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Michael Lau",
+  "keywords": [
+    "react",
+    "cinema",
+    "seat-preview",
+    "three",
+    "hong-kong"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nullmicgo/hong-kong-cinema.git",
+    "directory": "packages/hong-kong-cinema"
+  },
+  "homepage": "https://mock-hong-kong-cinema.nullmicgo.com/",
+  "bugs": {
+    "url": "https://github.com/nullmicgo/hong-kong-cinema/issues"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && tsup && cp src/cinema.css dist/style.css",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "three": ">=0.170.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@types/three": "^0.170.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "0.170.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w hong-kong-cinema && npm run build -w hong-kong-cinema-site",
+    "dev": "npm run build -w hong-kong-cinema && npm run dev -w hong-kong-cinema-site"
+  }
+}
