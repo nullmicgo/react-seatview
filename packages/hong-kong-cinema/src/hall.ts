@@ -49,7 +49,7 @@ export class Hall {
   private readonly onDown: (event: PointerEvent) => void;
   private readonly onMove: (event: PointerEvent) => void;
 
-  constructor(canvas: HTMLCanvasElement, options: { trailer: string; man: string; woman: string }) {
+  constructor(canvas: HTMLCanvasElement, options: { trailer: string; man: string; woman: string; seat: string }) {
     this.canvas = canvas;
     this.seats = buildSeats();
     this.selected = this.seats.find((seat) => seat.id === "B4") ?? this.seats[0];
@@ -108,27 +108,47 @@ export class Hall {
     bezel.position.set(0, SCREEN_Y, SCREEN_Z - 0.06);
     this.scene.add(bezel, screen);
 
-    const red = fabric(0xc62828);
-    const rose = fabric(0xc45362);
-    const dim = fabric(0x7a3034);
-    const mint = fabric(0x3dce6a, 0x16a34a, 0.55);
-    this.paintMaterials = { red, rose, dim, mint };
-    const backGeo = seatBackGeometry();
-    const panGeo = new THREE.BoxGeometry(0.62, 0.1, 0.5);
-    const armGeo = new THREE.BoxGeometry(0.08, 0.07, 0.55);
-    const postGeo = new THREE.BoxGeometry(0.06, 0.28, 0.08);
-    const rollGeo = new THREE.CylinderGeometry(0.075, 0.075, 0.64, 18);
-    const armMat = new THREE.MeshStandardMaterial({ color: 0x24262a, roughness: 0.55, metalness: 0.2 });
-
     this.seats.forEach((seat) => {
-      const material = seat.taken ? dim : seat.recliner ? rose : red;
-      const mesh = chair(material, { backGeo, panGeo, armGeo, postGeo, rollGeo, armMat });
+      const mesh = new THREE.Group() as Chair;
       mesh.position.set(seat.x, seat.y, seat.z);
+      mesh.userData.parts = [];
       mesh.userData.seat = seat;
       this.chairs.set(seat.id, mesh);
       this.scene.add(mesh);
     });
-    this.paint(this.selected, true);
+    const seatLoader = new GLTFLoader();
+    seatLoader.load(new URL(options.seat, window.location.href).href, (gltf) => {
+      if (!this.alive) return;
+      const template = placeSeat(gltf.scene);
+      const meshes: THREE.Mesh[] = [];
+      template.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (mesh.isMesh) meshes.push(mesh);
+      });
+      const source = meshes[0]?.material;
+      const base = (Array.isArray(source) ? source[0] : source) as THREE.MeshStandardMaterial | undefined;
+      if (base) {
+        this.paintMaterials = {
+          red: tintSeat(base, 0xffffff),
+          rose: tintSeat(base, 0xf0b4bc),
+          dim: tintSeat(base, 0x6e6e6e),
+          mint: tintSeat(base, 0xb6ffd0, 0x16a34a, 0.35),
+        };
+      }
+      this.seats.forEach((seat) => {
+        const group = this.chairs.get(seat.id);
+        if (!group) return;
+        const clone = template.clone(true);
+        const parts: THREE.Mesh[] = [];
+        clone.traverse((obj) => {
+          const mesh = obj as THREE.Mesh;
+          if (mesh.isMesh) parts.push(mesh);
+        });
+        group.userData.parts = parts;
+        group.add(clone);
+        this.paint(seat, seat.id === this.selected.id);
+      });
+    });
 
     const audience: { man?: THREE.Object3D; woman?: THREE.Object3D } = {};
     const seatAudience = () => {
@@ -188,7 +208,7 @@ export class Hall {
     this.tick();
   }
 
-  private paintMaterials!: Record<"red" | "rose" | "dim" | "mint", THREE.Material>;
+  private paintMaterials?: Record<"red" | "rose" | "dim" | "mint", THREE.Material>;
 
   private viewOf(seat: Seat) {
     const eye = new THREE.Vector3(seat.x, seat.y + 1.05, seat.z - 0.02);
@@ -198,7 +218,7 @@ export class Hall {
 
   private paint(seat: Seat, on: boolean) {
     const mesh = this.chairs.get(seat.id);
-    if (!mesh) return;
+    if (!mesh || !this.paintMaterials) return;
     const material = on ? this.paintMaterials.mint : seat.taken ? this.paintMaterials.dim : seat.recliner ? this.paintMaterials.rose : this.paintMaterials.red;
     mesh.userData.parts.forEach((part) => {
       part.material = material;
@@ -341,79 +361,23 @@ export class Hall {
   };
 }
 
-function fabric(color: number, emissive?: number, intensity?: number) {
-  return new THREE.MeshPhysicalMaterial({
-    color,
-    roughness: 0.8,
-    metalness: 0,
-    sheen: 0.35,
-    sheenRoughness: 0.55,
-    sheenColor: new THREE.Color(color).offsetHSL(0, 0.02, 0.12),
-    emissive: emissive || 0x000000,
-    emissiveIntensity: intensity || 0,
-  });
+function tintSeat(source: THREE.MeshStandardMaterial, color: number, emissive = 0x000000, intensity = 0) {
+  const material = source.clone();
+  material.color.setHex(color);
+  material.emissive.setHex(emissive);
+  material.emissiveIntensity = intensity;
+  return material;
 }
 
-function seatBackGeometry() {
-  const w = 0.7;
-  const h = 0.78;
-  const r = 0.13;
-  const shape = new THREE.Shape();
-  shape.moveTo(-w / 2 + r, 0);
-  shape.lineTo(w / 2 - r, 0);
-  shape.absarc(w / 2 - r, r, r, -Math.PI / 2, 0, false);
-  shape.lineTo(w / 2, h - r);
-  shape.absarc(w / 2 - r, h - r, r, 0, Math.PI / 2, false);
-  shape.lineTo(-w / 2 + r, h);
-  shape.absarc(-w / 2 + r, h - r, r, Math.PI / 2, Math.PI, false);
-  shape.lineTo(-w / 2, r);
-  shape.absarc(-w / 2 + r, r, r, Math.PI, Math.PI * 1.5, false);
-  const geo = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.16,
-    bevelEnabled: true,
-    bevelThickness: 0.012,
-    bevelSize: 0.014,
-    bevelSegments: 3,
-    curveSegments: 14,
-  });
-  geo.translate(0, 0.3, -0.08);
-  geo.computeVertexNormals();
-  return geo;
-}
-
-function chair(
-  material: THREE.Material,
-  geo: {
-    backGeo: THREE.BufferGeometry;
-    panGeo: THREE.BufferGeometry;
-    armGeo: THREE.BufferGeometry;
-    postGeo: THREE.BufferGeometry;
-    rollGeo: THREE.BufferGeometry;
-    armMat: THREE.Material;
-  },
-): Chair {
-  const group = new THREE.Group() as Chair;
-  const back = new THREE.Mesh(geo.backGeo, material);
-  back.position.set(0, 0, 0.16);
-  back.rotation.x = 0.05;
-  const pan = new THREE.Mesh(geo.panGeo, material);
-  pan.position.set(0, 0.42, -0.1);
-  const roll = new THREE.Mesh(geo.rollGeo, material);
-  roll.rotation.z = Math.PI / 2;
-  roll.position.set(0, 1.02, 0.2);
-  const left = new THREE.Mesh(geo.armGeo, geo.armMat);
-  left.position.set(-0.46, 0.58, 0.02);
-  left.rotation.z = 0.12;
-  const right = new THREE.Mesh(geo.armGeo, geo.armMat);
-  right.position.set(0.46, 0.58, 0.02);
-  right.rotation.z = -0.12;
-  const leftPost = new THREE.Mesh(geo.postGeo, geo.armMat);
-  leftPost.position.set(-0.37, 0.44, 0.16);
-  const rightPost = leftPost.clone();
-  rightPost.position.x = 0.37;
-  group.add(back, pan, roll, left, right, leftPost, rightPost);
-  group.userData.parts = [back, pan, roll];
-  return group;
+function placeSeat(root: THREE.Object3D) {
+  const holder = new THREE.Group();
+  root.rotation.y = Math.PI;
+  holder.add(root);
+  holder.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(holder);
+  const center = box.getCenter(new THREE.Vector3());
+  holder.position.set(-center.x, -box.min.y, -center.z);
+  return holder;
 }
 
 function prepareAudience(root: THREE.Object3D) {

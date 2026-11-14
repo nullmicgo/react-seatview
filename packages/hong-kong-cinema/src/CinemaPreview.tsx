@@ -8,6 +8,7 @@ const DEFAULT_DATES = ["現正預售", "今日", "11月15日(日)", "11月16日(
 export function CinemaPreview({
   films,
   audience,
+  seatModel,
   venue = "Hong Kong Cinema",
   venueZh = "香港戲院",
   hall = "Hall 3",
@@ -35,13 +36,13 @@ export function CinemaPreview({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !trailer) return;
-    const engine = new Hall(canvas, { trailer, man: audience.man, woman: audience.woman });
+    const engine = new Hall(canvas, { trailer, man: audience.man, woman: audience.woman, seat: seatModel });
     hallRef.current = engine;
     return () => {
       engine.dispose();
       hallRef.current = null;
     };
-  }, [audience.man, audience.woman, trailer]);
+  }, [audience.man, audience.woman, seatModel, trailer]);
 
   const selected = seats.find((seat) => seat.id === selectedId) ?? seats[0];
   const price = selected ? (selected.recliner ? prices.recliner : prices.standard) : 0;

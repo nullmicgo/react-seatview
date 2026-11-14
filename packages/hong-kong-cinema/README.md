@@ -41,6 +41,7 @@ export function App() {
     <CinemaPreview
       films={films}
       audience={{ man: "/man.glb", woman: "/woman.glb" }}
+      seatModel="/cinema-seat.glb"
       venue="Hong Kong Cinema"
       hall="Hall 3"
     />
@@ -62,6 +63,7 @@ Hold only changes the button in the browser. It does not book a seat.
 | --- | --- | --- |
 | `films` | yes | Posters, trailers, tags, and showtimes with standard and recliner prices |
 | `audience` | yes | `{ man, woman }` URLs for the seated GLB models |
+| `seatModel` | yes | GLB of one cinema seat, copied onto every chair |
 | `venue`, `venueZh`, `hall` | no | Names on the lobby, showtimes, and seat chart |
 | `dates` | no | Date chips. They only move the underline |
 | `showingDate` | no | The date printed above the showtimes |

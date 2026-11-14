@@ -32,6 +32,8 @@ export type CinemaCredit = {
 export type CinemaPreviewProps = {
   films: CinemaFilm[];
   audience: { man: string; woman: string };
+  /** URL of a GLB cinema seat. One copy is placed on every chair. */
+  seatModel: string;
   venue?: string;
   venueZh?: string;
   hall?: string;

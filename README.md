@@ -23,6 +23,7 @@ export function App() {
     <CinemaPreview
       films={films}
       audience={{ man: "/man.glb", woman: "/woman.glb" }}
+      seatModel="/cinema-seat.glb"
     />
   );
 }
@@ -218,9 +219,7 @@ Row A is the closest row. Each row behind it is 1.46 m farther from the screen a
 
 ### A chair
 
-One back, cushion, headrest, and armrest geometry is built once and shared by every chair. The back is a rounded rectangle `ExtrudeGeometry` (0.70 wide, 0.78 tall, 0.16 deep) with a small bevel. The cushion is a box, the headrest is a cylinder on its side, and the arms are dark boxes on posts.
-
-The chair's local `+z` is the back, away from the screen, so a person sitting in it faces `-z`. Seat cloth is one shared `MeshPhysicalMaterial` per state: red for a free standard seat, rose for a recliner, dim red for a taken seat, mint for the selected seat. The material uses roughness `0.8` and sheen `0.35`, which reads as theatre fabric under the screen light. Arms stay a separate dark `MeshStandardMaterial` and do not change color. Selecting a seat does not clone geometry. `paintSeat` points the back, cushion, and headrest at the mint material, and points the previous chair back at its own material.
+Every chair is a copy of `cinema-seat.glb`, the upholstered seat with a headrest, cup holder, and fabric maps. The model is turned to face the screen, then set on the floor at that seat's rake. One material set is shared: the cloth texture as it is for a free seat, a rose tint for a recliner, a darker tint for a taken seat, and a mint tint for the selected seat. Selecting a seat swaps that chair onto the mint material. The chair's local `+z` stays the back, away from the screen, so a person sitting in it faces `-z`.
 
 ### Screen, video, and light
 
