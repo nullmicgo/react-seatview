@@ -22,9 +22,22 @@ Lobby  →  Showtimes  →  Seat chart  →  Seat view
 
 Dragging on the seat view looks a little left, right, up, and down. The look returns to the seat's aim when you leave.
 
-## How it works
+## Technical solution
 
-Everything lives in `index.html`. There is no framework, no bundler, and no server API. Tailwind and Three.js 0.170 are loaded from CDNs. Posters, trailers, and the two seated people are files next to the page, so the page has to be served over HTTP.
+The app is one page. DOM layers handle choosing a film and a seat. Three.js draws the hall behind them and is revealed only for the fly-in. There is no scene file, no backend, and no build. An import map loads Three.js 0.170 and two addons from a CDN:
+
+```html
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+```
+
+The module imports `THREE`, `GLTFLoader`, and `RectAreaLightUniformsLib`. `RectAreaLightUniformsLib.init()` has to run before the screen light is created, or that light does not shade anything.
 
 ### Films and prices
 
@@ -47,19 +60,92 @@ A seat is taken when it is not a recliner and `(rowIndex * 5 + seatNumber * 3) %
 
 Selecting a seat paints that chair mint in the 3D scene and writes the row, number, and price into the footer. The default seat is B4.
 
-### The hall
+### Three.js scene
 
-The scene is a dark room. The screen is a 22 by 10 plane (about 2.2:1) at the front. A 16:9 trailer is cropped vertically so it fills that wide frame. The video element itself is a 1 pixel node on the page. Three.js samples it with a `VideoTexture` every frame.
+One `WebGLRenderer` draws into the `#stage` canvas. The canvas is in the page from the start, but the class `is-off` sets `visibility: hidden` until **See this seat**. The scene is already built and the animation loop is already running. Hiding the canvas is what stops the hall from flashing through the lobby.
 
-Light comes from the screen. A `RectAreaLight` the size of the screen points back into the seats, with a very dim ambient fill. Seat backs stay dark. Seat tops and the people catch the screen light. Seat cloth is a `MeshPhysicalMaterial` with a little sheen. The selected chair swaps to a mint material.
+Renderer settings:
 
-The floor rises toward the back: each row is 1.46 units farther from the screen and 0.22 units higher. The camera's eye is just in front of the chosen seat back, at about sitting height, and looks slightly above that height toward the screen. On a tall phone the vertical field of view opens to 64 degrees so the row in front stays in frame above the bottom bar. On a wide window it stays at 52 degrees.
+- Output color space `SRGBColorSpace`, so the video and the seat colors match the screen.
+- `ACESFilmicToneMapping` at exposure `1.08`, so the screen light rolls off instead of clipping the seat tops white.
+- Pixel ratio capped at 2.
+- Fog from 30 to 52 units, black, so the back of the room falls away.
 
-**See this seat** runs a quadratic bezier from an overhead view down to that eye point, over about 1.15 seconds, with an ease-out curve. `prefers-reduced-motion` skips the flight and cuts to the seat.
+The scene graph is small. A black floor, ceiling, a mask plane behind the screen, and a back wall. In front of those sit the screen bezel, the screen plane, and 108 chair groups. Units are metres. The screen is at `z = 0`. Positive `z` walks back through the audience. Positive `y` is up.
+
+Each seat is placed from its row index `r` (A is 0) and number `n`:
+
+```text
+x = left of the aisle for seats 1–6, right of the aisle for seats 7–12
+    aisle gap 1.85, seat pitch 0.84
+z = 7.4 + r * 1.46
+y = 0.15 + r * 0.22
+```
+
+Row A is the closest row. Each row behind it is 1.46 m farther from the screen and 0.22 m higher, which is the floor rake. The 2D chart uses the same list, and scales each row by `0.82 + r * 0.028` so the back rows look farther away.
+
+### A chair
+
+One back, cushion, headrest, and armrest geometry is built once and shared by every chair. The back is a rounded rectangle `ExtrudeGeometry` (0.70 wide, 0.78 tall, 0.16 deep) with a small bevel. The cushion is a box, the headrest is a cylinder on its side, and the arms are dark boxes on posts.
+
+The chair's local `+z` is the back, away from the screen, so a person sitting in it faces `-z`. Seat cloth is one shared `MeshPhysicalMaterial` per state: red for a free standard seat, rose for a recliner, dim red for a taken seat, mint for the selected seat. The material uses roughness `0.8` and sheen `0.35`, which reads as theatre fabric under the screen light. Arms stay a separate dark `MeshStandardMaterial` and do not change color. Selecting a seat does not clone geometry. `paintSeat` points the back, cushion, and headrest at the mint material, and points the previous chair back at its own material.
+
+### Screen, video, and light
+
+The cinema screen is a 22 by 10 plane, about 2.2:1, centred at `y = 6.15`. Its material is `MeshBasicMaterial`, so the picture is not affected by lights. The picture is a `VideoTexture` on a `<video>` element that is in the DOM at 1 by 1 pixel and fully transparent. The element has to exist and be allowed to play. Three.js copies the current video frame into the texture while the renderer draws.
+
+Trailers are 16:9. The screen is wider, so the texture is cropped instead of letterboxed:
+
+```text
+repeat.y  = (16 / 9) / (22 / 10)   ≈ 0.808
+offset.y  = (1 - repeat.y) / 2
+```
+
+That keeps the middle of the frame and cuts the top and bottom. Playback starts when a showtime is tapped, which is a user gesture, so the browser allows it. The video stays muted until **See this seat**. It loops, and it pauses when the visitor leaves the seat view. Switching films replaces `video.src` only when the URL changed, then calls `load()` and `play()`.
+
+The seats are not lit from behind the audience. A `RectAreaLight` the same size as the screen sits just in front of it, at `(0, 6.15, 0.55)`, and `lookAt(0, 1.6, 18)` aims it down the aisle. A rect area light emits along its local `-z`, and `lookAt` points that axis at the target, so the light travels from the screen toward the seats. An `AmbientLight` at intensity `0.2` keeps the unlit side from going pure black. Seat tops and faces toward the screen catch the picture light. The backs of the chairs stay dark.
+
+### Camera and the fly-in
+
+The camera is a `PerspectiveCamera` with near `0.08` and far `100`. A `ResizeObserver` sets the aspect from the canvas. When the canvas is taller than it is wide, the vertical field of view opens from 52 degrees to 64 degrees. A phone is tall, and 52 degrees aimed at the screen cuts off the seat backs in the next row. The wider phone field of view keeps that row above the bottom bar.
+
+For a chosen seat the eye and the look target are:
+
+```text
+eye    = (seat.x,  seat.y + 1.05, seat.z - 0.02)
+target = (seat.x * 0.42, eye.y + 0.55, 0)
+```
+
+The eye is sitting height, just in front of that chair's back. Multiplying `x` by `0.42` turns a side seat toward the middle of the screen instead of staring at the side wall. Adding `0.55` to the eye height looks slightly upward, which leaves the row in front in the lower part of the frame.
+
+The flight is one quadratic bezier for position and a second one for the look point. It starts overhead at about 7.6 m above the seat, passes a control point 4.6 m up, and ends at the eye. Each frame does:
+
+```text
+t = min(1, t + dt / 1.15)
+e = 1 - (1 - t)³
+position = quad(overhead, control, eye, e)
+look     = quad(overheadLook, controlLook, target, e)
+camera.lookAt(look)
+```
+
+The cubic ease-out spends more time settling into the chair than leaving the overhead view. `prefers-reduced-motion` copies the end pose and skips the curve. The mode goes `map` → `flying` → `seat`. The bottom bar is closed during the flight and opens when `t` reaches 1. Leaving the seat runs the same curve backwards, hides the canvas again, and pauses the video.
+
+While `mode` is `seat`, a drag does not move the camera. It offsets the look target: yaw adds to `x`, pitch subtracts from `y`, both clamped. Releasing the pointer keeps the last offset until the visitor leaves the seat, which resets both to 0.
 
 ### People in taken seats
 
-`man.glb` and `woman.glb` are static sitting meshes exported from Mixamo. Their vertices are in centimetres and stand along local -Z, so each clone is scaled by 0.01, rotated 90 degrees to stand up, then turned around by a parent group so the face points at the screen. Even seat indexes use the woman. Odd indexes use the man. Hair and glasses use alpha test instead of blended transparency so they sort correctly against the seats.
+`GLTFLoader` loads `man.glb` and `woman.glb` once. They are baked sitting poses from Mixamo, not skinned at runtime. The exported vertices are in centimetres and the body stands along local `-z` (the head is near `z = -133`, the feet near `z = 0`). Putting that mesh in the hall takes two rotations, and they cannot be the same object's Euler angles. Three.js applies an XYZ Euler in an order that lays the mesh through the floor if both turns are on one object.
+
+The fix is a child and a parent:
+
+```text
+child.rotation.x = π / 2      stand the -z body up onto +y
+child.scale      = 0.01       centimetres to metres
+parent.rotation.y = π + yaw   turn the face from the camera toward the screen
+parent.position  = (0, 0.06, 0.02)
+```
+
+The parent is added to the chair group, so the person moves with that seat. `(rowIndex + seatNumber) % 2 === 0` uses the woman. The other taken seats use the man. A small yaw, a few degrees, keeps the row from looking cloned. Hair and glasses come in with blended transparency. Those materials are switched to `alphaTest = 0.45`, `transparent = false`, and `depthWrite = true`, and every mesh is `frustumCulled = false`. Without that, the hair sorts in front of the screen or disappears when the scaled bounds fall outside the frustum.
 
 ## Run it locally
 
