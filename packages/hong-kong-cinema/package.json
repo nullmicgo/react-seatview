@@ -1,5 +1,5 @@
 {
-  "name": "hong-kong-cinema",
+  "name": "nullmicgo-3d-cinema-preview",
   "version": "0.1.0",
   "description": "React seat preview for a cinema hall. Pick a film, pick a seat, and see the screen from that chair.",
   "type": "module",

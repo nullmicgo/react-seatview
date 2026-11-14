@@ -2,21 +2,21 @@
 
 A mock cinema app for picking a seat in Hall 3 and seeing the screen from that seat. It is not a real cinema, and it does not take payment.
 
-The seat preview is the React package [`hong-kong-cinema`](https://www.npmjs.com/package/hong-kong-cinema). This repository's site, in `apps/web`, renders that component.
+The seat preview is the React package [`nullmicgo-3d-cinema-preview`](https://www.npmjs.com/package/nullmicgo-3d-cinema-preview). This repository's site, in `apps/web`, renders that component.
 
 Live preview: [mock-hong-kong-cinema.nullmicgo.com](https://mock-hong-kong-cinema.nullmicgo.com/)
 
 ## Install
 
 ```bash
-npm install hong-kong-cinema react react-dom three
+npm install nullmicgo-3d-cinema-preview react react-dom three
 ```
 
 React 18 or newer and Three.js 0.170 or newer have to be installed too. Import the component and its stylesheet:
 
 ```tsx
-import { CinemaPreview } from "hong-kong-cinema";
-import "hong-kong-cinema/style.css";
+import { CinemaPreview } from "nullmicgo-3d-cinema-preview";
+import "nullmicgo-3d-cinema-preview/style.css";
 
 export function App() {
   return (
@@ -171,7 +171,7 @@ sequenceDiagram
 
 ## Technical solution
 
-The site is a React app. `CinemaPreview` in the `hong-kong-cinema` package owns the lobby, showtimes, seat chart, and the Three.js hall. The hall stays hidden until the visitor asks to see the seat. There is no backend. The hall module imports `THREE`, `GLTFLoader`, and `RectAreaLightUniformsLib` from the `three` package. `RectAreaLightUniformsLib.init()` has to run before the screen light is created, or that light does not shade anything.
+The site is a React app. `CinemaPreview` in the `nullmicgo-3d-cinema-preview` package owns the lobby, showtimes, seat chart, and the Three.js hall. The hall stays hidden until the visitor asks to see the seat. There is no backend. The hall module imports `THREE`, `GLTFLoader`, and `RectAreaLightUniformsLib` from the `three` package. `RectAreaLightUniformsLib.init()` has to run before the screen light is created, or that light does not shade anything.
 
 ### Films and prices
 
@@ -293,7 +293,7 @@ Vite prints a local URL. Opening the built files directly fails. ES modules and 
 
 | Path | Role |
 | --- | --- |
-| `packages/hong-kong-cinema` | The React library. It is not on npm until you publish it |
+| `packages/hong-kong-cinema` | The React library, published as `nullmicgo-3d-cinema-preview` |
 | `apps/web` | This site, which renders `CinemaPreview` |
 | `apps/web/public` | Posters, trailers, `cinema-seat.glb`, and the two seated models |
 | `demo.mp4` | The walkthrough encoded for this README |
@@ -302,16 +302,16 @@ Posters and trailers are used here as a personal mock. They belong to their righ
 
 ## Publish to npm
 
-The package name `hong-kong-cinema` is free until the first publish. From this repository, on a machine logged in to npm:
+The package name on npm is `nullmicgo-3d-cinema-preview`. From this repository, on a machine logged in to npm:
 
 ```bash
 npm login
-npm publish -w hong-kong-cinema --access public
+npm publish -w nullmicgo-3d-cinema-preview --access public
 ```
 
 `npm login` opens a browser to npmjs and stores the token on this machine. The workspace script builds the library first (`tsc`, `tsup`, and the stylesheet), then uploads `dist`, `README.md`, and `LICENSE`. React, React DOM, and Three.js stay as peer dependencies, so people install those alongside the package.
 
-After it succeeds, `npm install hong-kong-cinema` works from the Install section above. A later change needs a new version in `packages/hong-kong-cinema/package.json` before the next `npm publish`.
+After it succeeds, `npm install nullmicgo-3d-cinema-preview` works from the Install section above. A later change needs a new version in `packages/hong-kong-cinema/package.json` before the next `npm publish`.
 
 ## Credits
 

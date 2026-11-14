@@ -1,4 +1,4 @@
-# hong-kong-cinema
+# nullmicgo-3d-cinema-preview
 
 A React component for a cinema seat preview. Visitors pick a film and a seat, then the camera flies down to that chair and shows the screen from there.
 
@@ -7,7 +7,7 @@ The component draws the hall with Three.js. You pass the films, the trailer file
 ## Install
 
 ```bash
-npm install hong-kong-cinema react react-dom three
+npm install nullmicgo-3d-cinema-preview react react-dom three
 ```
 
 React 18 or newer, and Three.js 0.170 or newer, are required.
@@ -17,8 +17,8 @@ React 18 or newer, and Three.js 0.170 or newer, are required.
 Give the parent a height, or leave the default, which fills the viewport. Import the stylesheet once.
 
 ```tsx
-import { CinemaPreview } from "hong-kong-cinema";
-import "hong-kong-cinema/style.css";
+import { CinemaPreview } from "nullmicgo-3d-cinema-preview";
+import "nullmicgo-3d-cinema-preview/style.css";
 
 const films = [
   {

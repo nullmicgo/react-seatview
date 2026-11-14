@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "hong-kong-cinema": "*",
+    "nullmicgo-3d-cinema-preview": "*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "three": "0.170.0"

@@ -1,5 +1,5 @@
-import { CinemaPreview } from "hong-kong-cinema";
-import "hong-kong-cinema/style.css";
+import { CinemaPreview } from "nullmicgo-3d-cinema-preview";
+import "nullmicgo-3d-cinema-preview/style.css";
 import { audience, credit, films } from "./films";
 
 export function App() {
