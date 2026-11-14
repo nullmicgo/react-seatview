@@ -1,5 +1,5 @@
 {
-  "name": "react-3d-cinema-preview",
+  "name": "react-seatview",
   "version": "0.1.0",
   "description": "React component for a 3D cinema seat preview. Pick a film, pick a seat, and see the screen from that chair.",
   "type": "module",
@@ -15,12 +15,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nullmicgo/react-3d-cinema-preview.git",
-    "directory": "packages/react-3d-cinema-preview"
+    "url": "git+https://github.com/nullmicgo/react-seatview.git",
+    "directory": "packages/react-seatview"
   },
   "homepage": "https://mock-hong-kong-cinema.nullmicgo.com/",
   "bugs": {
-    "url": "https://github.com/nullmicgo/react-3d-cinema-preview/issues"
+    "url": "https://github.com/nullmicgo/react-seatview/issues"
   },
   "files": [
     "dist",

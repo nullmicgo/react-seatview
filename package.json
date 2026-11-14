@@ -5,7 +5,7 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build -w react-3d-cinema-preview && npm run build -w react-3d-cinema-preview-site",
-    "dev": "npm run build -w react-3d-cinema-preview && npm run dev -w react-3d-cinema-preview-site"
+    "build": "npm run build -w react-seatview && npm run build -w react-seatview-site",
+    "dev": "npm run build -w react-seatview && npm run dev -w react-seatview-site"
   }
 }

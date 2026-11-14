@@ -1,4 +1,4 @@
-# react-3d-cinema-preview
+# react-seatview
 
 A React component for a cinema seat preview. Visitors pick a film and a seat, then the camera flies down to that chair and shows the screen from there.
 
@@ -7,7 +7,7 @@ The component draws the hall with Three.js. You pass the films, the trailer file
 ## Install
 
 ```bash
-npm install react-3d-cinema-preview react react-dom three
+npm install react-seatview react react-dom three
 ```
 
 React 18 or newer, and Three.js 0.170 or newer, are required.
@@ -17,8 +17,8 @@ React 18 or newer, and Three.js 0.170 or newer, are required.
 Give the parent a height, or leave the default, which fills the viewport. Import the stylesheet once.
 
 ```tsx
-import { CinemaPreview } from "react-3d-cinema-preview";
-import "react-3d-cinema-preview/style.css";
+import { CinemaPreview } from "react-seatview";
+import "react-seatview/style.css";
 
 const films = [
   {
@@ -77,4 +77,4 @@ npm install
 npm run dev
 ```
 
-The preview site is `apps/web`. The library source is `packages/react-3d-cinema-preview`.
+The preview site is `apps/web`. The library source is `packages/react-seatview`.

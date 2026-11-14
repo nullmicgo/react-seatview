@@ -1,5 +1,5 @@
 {
-  "name": "react-3d-cinema-preview-site",
+  "name": "react-seatview-site",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react-3d-cinema-preview": "*",
+    "react-seatview": "*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "three": "0.170.0"

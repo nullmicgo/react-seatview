@@ -1,4 +1,4 @@
-import type { CinemaFilm } from "react-3d-cinema-preview";
+import type { CinemaFilm } from "react-seatview";
 
 export const films: CinemaFilm[] = [
   {
