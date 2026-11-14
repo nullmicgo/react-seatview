@@ -6,6 +6,12 @@ Live preview: [mocl-hong-kong-cinema.nullmicgo.com](https://mocl-hong-kong-cinem
 
 Developed by [Michael Lau](http://nullmicgo.com/).
 
+## Demo
+
+A walk through the lobby, a showtime, a seat, and the view from that seat. The recording has sound. Unmute the player if you want the trailer.
+
+https://github.com/user-attachments/assets/76103fa6-e00a-4413-a121-175cbea6be64
+
 ## Screen flow
 
 The page is four full-screen layers in one document. Only one task layer is interactive at a time. The WebGL canvas stays hidden until the visitor asks to see the seat.
